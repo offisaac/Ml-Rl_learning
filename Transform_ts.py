@@ -1,5 +1,5 @@
-from  torchvision.transfortensorboardms import transforms
-from torch.utils. import SummaryWriter
+from  torchvision.transforms import transforms
+from torch.utils.tensorboard import SummaryWriter
 from PIL import Image
 import matplotlib.pyplot as plt
 import  torchvision
@@ -24,6 +24,8 @@ train_dataset=torchvision.datasets.CIFAR10(root="./dataset",train=True,download=
 
 img,target=train_dataset[0]#数据集不是一个列表 这个数据集有内部自己定义的__getitem__方法 数据集本身是一个类 其内存在很多对象 这里内部调用data里的参数
 
-print(img)
-print(target)
-img.show()
+# print(img)
+# print(target)
+# print(train_dataset.classes)
+# print(train_dataset.classes[target])
+# img.show()
