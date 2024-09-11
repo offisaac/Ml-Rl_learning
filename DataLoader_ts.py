@@ -19,6 +19,7 @@ print(test_data[0][0].shape)#注意 只有tensor类型下处理的数据才有sh
 #         print(targets)
 
 with SummaryWriter("batch_logs") as writer:
+
     for epoch in range(1,6):
         for i, data in enumerate(test_dataloader):
             if i >=10:
