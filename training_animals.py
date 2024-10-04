@@ -71,21 +71,23 @@ class CNNClassifier(nn.Module):
         #卷积操作影响图层个数和图的尺寸 池化只影响图的尺寸 图最终尺寸只和初始图尺寸 卷积的stride padding有关 和通道无关 通道只和图层有关
         self.func1=nn.Linear(10*8*8,10)#怎么从32通道8*8array对应到32*8*8个列向量 底层不用考虑
         self.func2=nn.Linear(10,class_num)
-        s
-        #self.dropout = nn.Dropout(0.5)#Dropout用于训练更新参数时随机的让神经元的输出置0 但实际使用和评估时不做改变
+        self.relu=nn.ReLU()
+        self.dropout = nn.Dropout(0.2)#Dropout用于训练更新参数时随机的让神经元的输出置0 但实际使用和评估时不做改变 因为CNN参数相对于全连接不太多 所以一般给的这个值不大
     def forward(self,Input):
         x = self.conv1(Input)
         x = self.pool(x)
         x = self.conv2(x)
         x = self.pool(x)
+        x = self.dropout(x)#主要是为了防止过拟合使用 防止模型对某些神经元过于依赖
         x = x.view(x.size(0),-1)#x = x.view(-1,32*8*8) 这里-1可以在任意位置 表示该位置由输入和另一个位置求得 这里两式等效 将 x 的形状从 [batch size, 32, 8, 8] 变为 [batch size, 2048]。
         x = self.func1(x)
         x = self.func2(x)
         return x
 model = CNNClassifier(my_train_data.class_num)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=0.0005, momentum=0)
-epochs=150
+# optimizer = optim.SGD(model.parameters(), lr=0.0005, momentum=0)
+optimizer = optim.RMSprop(model.parameters(), lr=0.01)
+epochs=600
 for epoch in range(epochs):
     for X,Y in my_train_data_loader:
         outputs = model(X)
