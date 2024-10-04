@@ -54,7 +54,7 @@ class mydataset(dataset.Dataset):
             self.class_num=len(dataset.class_to_idx)
     def __getitem__(self,index):
         # return torch.tensor(self.X[index],dtype=torch.float32).permute(2,0,1),self.Y_unique_heating_code[index]
-        return torch.tensor(self.X[index], dtype=torch.float32).permute(2, 0, 1), self.Y[index]
+        return torch.tensor(self.X[index], dtype=torch.float32).permute(2, 0, 1), self.Y[index]#理论上应该使用独热编码 但是pytorch对数学公式做了处理 先得到输出的权重 再softmax得到概率 再取-log从取最大值到取最小值 再根据整数序列选取使用哪个输出概率(如果模型好 真实对应的就是最大的概率就是最小的log(P)输出
     def __len__(self):
         return len(self.X)
 
@@ -65,28 +65,30 @@ my_test_data_loader=torch.utils.data.DataLoader(my_test_data,batch_size=400,shuf
 class CNNClassifier(nn.Module):
     def __init__(self,class_num):
         super().__init__()#!外部的输入不应该放在类名后(作为继承) 而是放在init后
-        self.conv1=nn.Conv2d(3,5,3,stride=1,padding=1)#这里padding=1是指每个边都向外扩一个"0"的像素 所以对于行 相当于扩了两个像素
+        self.conv1=nn.Conv2d(3,10,3,stride=1,padding=1)#这里padding=1是指每个边都向外扩一个"0"的像素 所以对于行 相当于扩了两个像素
         self.pool=nn.MaxPool2d(2,2)
-        self.conv2=nn.Conv2d(5,10,3,stride=1,padding=1)#实际设计图片的卷积层时 通道输出图层数由filter决定 最后给线性层输入的列向量行数字需要根据卷积后的图片尺寸决定 这个有公式计算
+        self.conv2=nn.Conv2d(10,10,3,stride=1,padding=1)#实际设计图片的卷积层时 通道输出图层数由filter决定 最后给线性层输入的列向量行数字需要根据卷积后的图片尺寸决定 这个有公式计算
         #卷积操作影响图层个数和图的尺寸 池化只影响图的尺寸 图最终尺寸只和初始图尺寸 卷积的stride padding有关 和通道无关 通道只和图层有关
         self.func1=nn.Linear(10*8*8,10)#怎么从32通道8*8array对应到32*8*8个列向量 底层不用考虑
         self.func2=nn.Linear(10,class_num)
         self.relu=nn.ReLU()
         self.dropout = nn.Dropout(0.2)#Dropout用于训练更新参数时随机的让神经元的输出置0 但实际使用和评估时不做改变 因为CNN参数相对于全连接不太多 所以一般给的这个值不大
+        self.sigmoid=nn.Sigmoid()
     def forward(self,Input):
         x = self.conv1(Input)
         x = self.pool(x)
         x = self.conv2(x)
         x = self.pool(x)
-        x = self.dropout(x)#主要是为了防止过拟合使用 防止模型对某些神经元过于依赖
+        # x = self.dropout(x)#主要是为了防止过拟合使用 防止模型对某些神经元过于依赖 增加泛化能力(希望部分集训练的参数对全集也适应)
         x = x.view(x.size(0),-1)#x = x.view(-1,32*8*8) 这里-1可以在任意位置 表示该位置由输入和另一个位置求得 这里两式等效 将 x 的形状从 [batch size, 32, 8, 8] 变为 [batch size, 2048]。
         x = self.func1(x)
         x = self.func2(x)
+        #x = self.relu(x) #不用加 softmax在crossentropy中做了
         return x
 model = CNNClassifier(my_train_data.class_num)
 criterion = nn.CrossEntropyLoss()
 # optimizer = optim.SGD(model.parameters(), lr=0.0005, momentum=0)
-optimizer = optim.RMSprop(model.parameters(), lr=0.01)
+optimizer = optim.RMSprop(model.parameters(), lr=0.001,momentum=0.3)
 epochs=600
 for epoch in range(epochs):
     for X,Y in my_train_data_loader:
@@ -117,7 +119,7 @@ correct = 0
 total = 0
 with torch.no_grad():  # 禁用梯度计算，以减少内存占用
     for data, labels in my_test_data_loader:
-        outputs = loaded_model(data)
+        outputs = model(data)
         _, predicted = torch.max(outputs, 1)  # 获取每个样本的最大概率的索引，即预测的类别 1代表从行取 也就是batch计算出的结果其实是行堆叠
         total += labels.size(0)#表示在张量第零维的长度 张量本身的shape返回其各个维度的长度！！！
         correct += (predicted == labels).sum().item()
