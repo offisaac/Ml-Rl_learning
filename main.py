@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
-import os
 import os #python中关于操作系统的库 可以实现和系统的交互
 # print(torch.__version__)
 # print(torch.cuda.is_available())
@@ -18,8 +17,8 @@ class  MyData(Dataset):
         self.img_name_list=os.listdir(path)
 
     def __getitem__(self,index):
-        img_path=self.img_name_list[index]
-        img_item_path=os.path.join(self.path,img_path)
+        img_name=self.img_name_list[index]
+        img_item_path=os.path.join(self.path,img_name)
         img=Image.open(img_item_path)#通过路径返回图片类型对象(包含图片的各种特诊)
         label=self.img_name_list[index]
         return img,label

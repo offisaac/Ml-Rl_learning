@@ -17,7 +17,6 @@ print(test_data[0][0].shape)#注意 只有tensor类型下处理的数据才有sh
 #         writer.add_image('imgs',img_grid,i)
 #         print(imgs.shape)
 #         print(targets)
-
 with SummaryWriter("batch_logs") as writer:
 
     for epoch in range(1,6):

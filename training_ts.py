@@ -20,6 +20,7 @@ class LinearFittingModel(nn.Module):
         self.softplus=nn.Softplus()
         self.elu=nn.ELU()
         self.softsign=nn.Softsign()
+        #self.dropout = nn.Dropout(0.1)
     def forward(self,Input):
         x = self.linear1(Input)
         x = self.softsign(x)
@@ -29,6 +30,7 @@ class LinearFittingModel(nn.Module):
         x = self.softsign(x)
         x = self.linear4(x)
         x = self.softsign(x)
+        # x =self.dropout(x)
         x = self.linear5(x)
         # x =self.relu(x)
         # x = self.softplus(x)
@@ -45,9 +47,9 @@ for epoch in range(epochs):
     for batch_inputs, batch_targets in dataloader:
         outputs=model(batch_inputs)
         loss=criterion(outputs,batch_targets)
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
     if (epoch + 1) % 10 == 0:
         print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}')
     if loss.item()<0.001:
