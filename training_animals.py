@@ -15,6 +15,8 @@ compose_transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])
 ])
+normalize = transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])
+
 to_tensor = transforms.ToTensor()
 train_data = torchvision.datasets.CIFAR10("./data", train=True, download=True, transform=compose_transform)
 test_data = torchvision.datasets.CIFAR10("./data", train=False, download=True, transform=compose_transform)
@@ -55,15 +57,15 @@ class mydataset(dataset.Dataset):
             unique_heating_code=torch.tensor(np.eye(10))#产生独热编码
             for i in dataset.targets:
                 self.Y_unique_heating_code.append(unique_heating_code[:,i])#创建真实值对应独热编码
-            self.X=dataset.data#data本身就是双array 对应元素是三通道 卷积层可以直接读取 这部分底层不需要人为操作
+            self.X = dataset  # data本身就是双array 对应元素是三通道 卷积层可以直接读取 这部分底层不需要人为操作
             self.Y = dataset.targets
             self.class_num=len(dataset.class_to_idx)
     def __getitem__(self,index):
-        # return torch.tensor(self.X[index],dtype=torch.float32).permute(2,0,1),self.Y_unique_heating_code[index]
-        return torch.tensor(self.X[index], dtype=torch.float32).permute(2, 0, 1), self.Y[
+        # return normalize(torch.tensor(self.X.data[index], dtype=torch.float32).permute(2, 0, 1)),self.Y_unique_heating_code[index]
+        return torch.tensor(self.X.data[index], dtype=torch.float32).permute(2, 0, 1), self.Y[
             index]  # 理论上应该使用独热编码 但是pytorch对数学公式做了处理 先得到输出的权重 再softmax得到概率 再取-log从取最大值到取最小值 再根据整数序列选取使用哪个输出概率(如果模型好 真实对应的就是最大的概率就是最小的log(P)输出
     def __len__(self):
-        return len(self.X)
+        return len(self.X.data)
 
 my_train_data=mydataset(train_data)
 my_test_data=mydataset(test_data)
@@ -102,12 +104,13 @@ class CNNClassifier(nn.Module):
         #x = self.relu(x) #不用加 使用crossentropy 计算Loss内部会对Outputs先进行softmax再计算
         return x
 model = CNNClassifier(my_train_data.class_num)
+model.load_state_dict(torch.load(f'./model_parameter_set/model_parameter_100', weights_only=True))
 criterion = nn.CrossEntropyLoss()
 # optimizer = optim.SGD(model.parameters(), lr=0.0005, momentum=0)
 # optimizer = optim.RMSprop(model.parameters(), lr=0.0005,momentum=0.2)
 optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08,
                        weight_decay=0)  # 如果没有二阶beta参数 Adam和RMSprop可以认为同效果
-# epochs = 500
+epochs = 500
 # for epoch in range(epochs):
 #     for X, Y in my_train_data_loader:
 #         outputs = model(X)
@@ -115,15 +118,16 @@ optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-
 #         optimizer.zero_grad()
 #         loss.backward()
 #         optimizer.step()
-#     if (epoch + 1) % 2 == 0:
+#     if (epoch + 1) %1  == 0:
 #         print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}')
 #     if (epoch) % 10 == 0:
-#         torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{epoch}')
+#         pass
+#         # torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{epoch}')
 #     if loss.item() < 0.001:
 #         break
 
 loaded_model = CNNClassifier(class_num=10)
-loaded_model.load_state_dict(torch.load(f'./model_parameter_set/model_parameter_20', weights_only=True))
+loaded_model.load_state_dict(torch.load(f'./model_parameter_set/model_parameter_100', weights_only=True))
 loaded_model.eval()  # 设置为评估模式 用于关闭某些正则化操作
 
 # 测试模型的准确率 自己的 需要修改模型__getitem__返回值
@@ -140,10 +144,10 @@ loaded_model.eval()  # 设置为评估模式 用于关闭某些正则化操作
 #                 count_right+=1
 # print(f"the possibility of rightness is{count_right/count_all}")
 # 这个不需要 和训练模型配套
-correct = 0
-total = 0
+correct = 0.00001
+total = 0.00001
 with torch.no_grad():  # 禁用梯度计算，以减少内存占用
-    for data, labels in my_test_data_loader:
+    for data, labels in my_train_data_loader:
         outputs = model(data)
         _, predicted = torch.max(outputs, 1)  # 获取每个样本的最大概率的索引，即预测的类别 1代表从行取 也就是batch计算出的结果其实是行堆叠
         total += labels.size(0)  # 表示在张量第零维的长度 张量本身的shape返回其各个维度的长度！！！
