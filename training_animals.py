@@ -20,34 +20,9 @@ normalize = transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.24
 to_tensor = transforms.ToTensor()
 train_data = torchvision.datasets.CIFAR10("./data", train=True, download=True, transform=compose_transform)
 test_data = torchvision.datasets.CIFAR10("./data", train=False, download=True, transform=compose_transform)
-print(train_data.data[100][11][11])
-
-# class mydataset(dataset.Dataset):
-#     def __init__(self, dataset):
-#         # 初始化变量
-#         self.idx_to_class = {}
-#         self.Y_unique_heating_code = []
-#
-#         # 构建类索引映射
-#         for key in dataset.class_to_idx:
-#             self.idx_to_class[dataset.class_to_idx[key]] = key
-#
-#         # 产生独热编码
-#         unique_heating_code = torch.eye(10)  # 独热编码矩阵
-#         for i in dataset.targets:
-#             self.Y_unique_heating_code.append(unique_heating_code[i])  # 创建真实值对应的独热编码
-#         self.Y_unique_heating_code = torch.stack(self.Y_unique_heating_code)  # 转换为张量
-#
-#         # 获取数据
-#         self.X = dataset.data
-#         self.class_num = len(dataset.class_to_idx)
-#
-#     def __getitem__(self, index):
-#         # 获取输入图像数据及其独热编码标签
-#         return torch.tensor(self.X[index], dtype=torch.float32).permute(2, 0, 1), self.Y_unique_heating_code[index]
-#
-#     def __len__(self):
-#         return len(self.X)
+print(train_data.data[100][11][11])  # 这里访问的是data变量[batch,H,W,C]
+print(train_data[100][0][0])  # 这里访问的是__getitem__返回的image变量[[100][0]这里访问到iamge image内部是[C,H,W]]
+print(train_data[100][0][0][11][11], train_data[100][0][1][11][11], train_data[100][0][2][11][11])  # 此数据为上数据的归一化
 class mydataset(dataset.Dataset):
     def __init__(self,dataset):
         self.idx_to_class={}
@@ -105,6 +80,8 @@ class CNNClassifier(nn.Module):
         return x
 model = CNNClassifier(my_train_data.class_num)
 model.load_state_dict(torch.load(f'./model_parameter_set/model_parameter_100', weights_only=True))
+
+"""开始训练"""
 criterion = nn.CrossEntropyLoss()
 # optimizer = optim.SGD(model.parameters(), lr=0.0005, momentum=0)
 # optimizer = optim.RMSprop(model.parameters(), lr=0.0005,momentum=0.2)
@@ -125,7 +102,9 @@ epochs = 500
 #         # torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{epoch}')
 #     if loss.item() < 0.001:
 #         break
+"""结束训练"""
 
+"""开始测试"""
 loaded_model = CNNClassifier(class_num=10)
 loaded_model.load_state_dict(torch.load(f'./model_parameter_set/model_parameter_100', weights_only=True))
 loaded_model.eval()  # 设置为评估模式 用于关闭某些正则化操作
@@ -146,14 +125,15 @@ loaded_model.eval()  # 设置为评估模式 用于关闭某些正则化操作
 # 这个不需要 和训练模型配套
 correct = 0.00001
 total = 0.00001
-with torch.no_grad():  # 禁用梯度计算，以减少内存占用
-    for data, labels in my_train_data_loader:
-        outputs = model(data)
-        _, predicted = torch.max(outputs, 1)  # 获取每个样本的最大概率的索引，即预测的类别 1代表从行取 也就是batch计算出的结果其实是行堆叠
-        total += labels.size(0)  # 表示在张量第零维的长度 张量本身的shape返回其各个维度的长度！！！
-        correct += (
-                    predicted == labels).sum().item()  # ==是两个vector判断等 相等处赋True 不等处赋值False 返回相同大小vector .sum是将其内所有数相加 .item是将张量类型数转化成普通类型数
-print(f"the possibility of rightness is{correct / total}")
+# with torch.no_grad():  # 禁用梯度计算，以减少内存占用
+#     for data, labels in my_train_data_loader:
+#         outputs = model(data)
+#         _, predicted = torch.max(outputs, 1)  # 获取每个样本的最大概率的索引，即预测的类别 1代表从行取 也就是batch计算出的结果其实是行堆叠
+#         total += labels.size(0)  # 表示在张量第零维的长度 张量本身的shape返回其各个维度的长度！！！
+#         correct += (
+#                     predicted == labels).sum().item()  # ==是两个vector判断等 相等处赋True 不等处赋值False 返回相同大小vector .sum是将其内所有数相加 .item是将张量类型数转化成普通类型数
+# print(f"the possibility of rightness is{correct / total}")
+"""结束测试"""
 
 # 保存模型参数 直接保存到指定地址即可
 # 导入模型参数 需要创建模型 导入模型参数 模型进行eval处理
