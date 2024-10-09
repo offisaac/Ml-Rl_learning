@@ -121,36 +121,40 @@ for epoch in range(epochs):
         torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{epoch}')
     if loss.item() < 0.001:
         break
-# 保存模型参数 直接保存到指定地址即可
-# 导入模型参数 需要创建模型 导入模型参数 模型进行eval处理
-# timestamp = time.strftime("%Y%m%d_%H%M%S")
-# torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{timestamp}')
+
 # loaded_model = CNNClassifier(class_num=10)
 # loaded_model.load_state_dict(torch.load(f'./model_parameter_set/model_parameter_100',weights_only=True))
 # loaded_model.eval()  # 设置为评估模式 用于关闭某些正则化操作
 
-count_all=0
-count_right=0
-with torch.no_grad():  # 禁用梯度计算，以减少内存占用
-    for data,label in my_test_data_loader:
-        count_all+=len(data)#orcount_all+=data.size(0) 张量0维度 也就是batch维度的大小
-        _, predict = torch.max(model(data), 1)
-        # _, predict = torch.max(loaded_model(data), 1)
-        _,real=torch.max(label,1)
-        for i,j in zip(predict,real):
-            if i==j:
-                count_right+=1
-print(f"the possibility of rightness is{count_right/count_all}")
-# # 测试模型的准确率
-# correct = 0
-# total = 0
+# 测试模型的准确率 自己的 需要修改模型__getitem__返回值
+# count_all=0
+# count_right=0
 # with torch.no_grad():  # 禁用梯度计算，以减少内存占用
-#     for data, labels in my_test_data_loader:
-#         outputs = model(data)
-#         _, predicted = torch.max(outputs, 1)  # 获取每个样本的最大概率的索引，即预测的类别 1代表从行取 也就是batch计算出的结果其实是行堆叠
-#         total += labels.size(0)#表示在张量第零维的长度 张量本身的shape返回其各个维度的长度！！！
-#         correct += (predicted == labels).sum().item()#==是两个vector判断等 相等处赋True 不等处赋值False 返回相同大小vector .sum是将其内所有数相加 .item是将张量类型数转化成普通类型数
-# print(f"the possibility of rightness is{correct/total}")
+#     for data,label in my_test_data_loader:
+#         count_all+=len(data)#orcount_all+=data.size(0) 张量0维度 也就是batch维度的大小
+#         _, predict = torch.max(model(data), 1)
+#         # _, predict = torch.max(loaded_model(data), 1)
+#         _,real=torch.max(label,1)
+#         for i,j in zip(predict,real):
+#             if i==j:
+#                 count_right+=1
+# print(f"the possibility of rightness is{count_right/count_all}")
+# 这个不需要 和训练模型配套
+correct = 0
+total = 0
+with torch.no_grad():  # 禁用梯度计算，以减少内存占用
+    for data, labels in my_test_data_loader:
+        outputs = model(data)
+        _, predicted = torch.max(outputs, 1)  # 获取每个样本的最大概率的索引，即预测的类别 1代表从行取 也就是batch计算出的结果其实是行堆叠
+        total += labels.size(0)  # 表示在张量第零维的长度 张量本身的shape返回其各个维度的长度！！！
+        correct += (
+                    predicted == labels).sum().item()  # ==是两个vector判断等 相等处赋True 不等处赋值False 返回相同大小vector .sum是将其内所有数相加 .item是将张量类型数转化成普通类型数
+print(f"the possibility of rightness is{correct / total}")
+
+# 保存模型参数 直接保存到指定地址即可
+# 导入模型参数 需要创建模型 导入模型参数 模型进行eval处理
+# timestamp = time.strftime("%Y%m%d_%H%M%S")
+# torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{timestamp} possibility{correct/total}')
 
 
 
