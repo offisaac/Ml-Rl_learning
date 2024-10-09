@@ -107,24 +107,24 @@ criterion = nn.CrossEntropyLoss()
 # optimizer = optim.RMSprop(model.parameters(), lr=0.0005,momentum=0.2)
 optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08,
                        weight_decay=0)  # 如果没有二阶beta参数 Adam和RMSprop可以认为同效果
-epochs = 500
-for epoch in range(epochs):
-    for X, Y in my_train_data_loader:
-        outputs = model(X)
-        loss = criterion(outputs, Y)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-    if (epoch + 1) % 2 == 0:
-        print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}')
-    if (epoch) % 10 == 0:
-        torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{epoch}')
-    if loss.item() < 0.001:
-        break
+# epochs = 500
+# for epoch in range(epochs):
+#     for X, Y in my_train_data_loader:
+#         outputs = model(X)
+#         loss = criterion(outputs, Y)
+#         optimizer.zero_grad()
+#         loss.backward()
+#         optimizer.step()
+#     if (epoch + 1) % 2 == 0:
+#         print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}')
+#     if (epoch) % 10 == 0:
+#         torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{epoch}')
+#     if loss.item() < 0.001:
+#         break
 
-# loaded_model = CNNClassifier(class_num=10)
-# loaded_model.load_state_dict(torch.load(f'./model_parameter_set/model_parameter_100',weights_only=True))
-# loaded_model.eval()  # 设置为评估模式 用于关闭某些正则化操作
+loaded_model = CNNClassifier(class_num=10)
+loaded_model.load_state_dict(torch.load(f'./model_parameter_set/model_parameter_20', weights_only=True))
+loaded_model.eval()  # 设置为评估模式 用于关闭某些正则化操作
 
 # 测试模型的准确率 自己的 需要修改模型__getitem__返回值
 # count_all=0
@@ -153,8 +153,8 @@ print(f"the possibility of rightness is{correct / total}")
 
 # 保存模型参数 直接保存到指定地址即可
 # 导入模型参数 需要创建模型 导入模型参数 模型进行eval处理
-# timestamp = time.strftime("%Y%m%d_%H%M%S")
-# torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{timestamp} possibility{correct/total}')
+timestamp = time.strftime("%Y%m%d_%H%M%S")
+torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{timestamp} possibility{correct / total}')
 
 
 
