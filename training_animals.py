@@ -123,7 +123,8 @@ optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-
 #         break
 
 loaded_model = CNNClassifier(class_num=10)
-loaded_model.load_state_dict(torch.load(f'./model_parameter_set/model_parameter_20', weights_only=True))
+loaded_model.load_state_dict(
+    torch.load(f'./model_parameter_set/model_parameter_20241009_154418 possibility0.0997', weights_only=True))
 loaded_model.eval()  # 设置为评估模式 用于关闭某些正则化操作
 
 # 测试模型的准确率 自己的 需要修改模型__getitem__返回值
