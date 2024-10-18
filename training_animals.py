@@ -8,8 +8,18 @@ import torch.utils.data.dataloader as dataloader
 import torch
 import torch.optim as optim
 import torch.nn as nn
-
+import torch.nn.functional as F
 import time
+
+
+def custom_Cross_Entropy(logits, target):
+    softmax_output = F.softmax(logits,
+                               dim=1)  # dim=1代表有两个维度 这里单个logit就是一个维度了(len=10) logits又是另外一个维度 同时 这里也介绍了F的一个用处 其内定义好很多基础函数
+    log_softmax_output = -torch.log(softmax_output)  # 转化为log形式数据 返回张量对象
+    batch_loss = log_softmax_output.gather(1, target.unsqueeze(1)).squeeze(
+        1)  # squeeze用于修改向量维度unsqueeze表示产生序列1维度 squeeze表示消去序列1维度 底层操作其实就是将行向量变成列向量 gather第一个参数表示对数据的列进行操作 本身代表通过给定给定数据序列 来选取每一列中的第几个序列元素
+    loss = batch_loss.mean()  # 对列向量求均值
+    return loss
 
 compose_transform = transforms.Compose([
     transforms.ToTensor(),
@@ -107,20 +117,21 @@ criterion = nn.CrossEntropyLoss()
 # optimizer = optim.RMSprop(model.parameters(), lr=0.0005,momentum=0.2)
 optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08,
                        weight_decay=0)  # 如果没有二阶beta参数 Adam和RMSprop可以认为同效果
-# epochs = 500
-# for epoch in range(epochs):
-#     for X, Y in my_train_data_loader:
-#         outputs = model(X)
-#         loss = criterion(outputs, Y)
-#         optimizer.zero_grad()
-#         loss.backward()
-#         optimizer.step()
-#     if (epoch + 1) % 2 == 0:
-#         print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}')
-#     if (epoch) % 10 == 0:
-#         torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{epoch}')
-#     if loss.item() < 0.001:
-#         break
+epochs = 500
+for epoch in range(epochs):
+    for X, Y in my_train_data_loader:
+        outputs = model(X)
+        # loss = criterion(outputs, Y)
+        loss = custom_Cross_Entropy(outputs, Y)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+    if (epoch + 1) % 2 == 0:
+        print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}')
+    if (epoch) % 10 == 0:
+        torch.save(model.state_dict(), f'model_parameter_set/model_parameter_{epoch}')
+    if loss.item() < 0.001:
+        break
 
 loaded_model = CNNClassifier(class_num=10)
 loaded_model.load_state_dict(
