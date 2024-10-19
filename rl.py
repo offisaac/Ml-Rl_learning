@@ -72,7 +72,7 @@ class Q_learning_method:
     # 输入state 得到action
     def __init__(self):
         self.game_set = game_set()
-        self.Q_table = np.zeros((self.game_set.n_rows, self.game_set.n_cols, self.game_set.n_actions), dtype=np.float32)
+        self.Q_table = np.random.rand(self.game_set.n_rows, self.game_set.n_cols, self.game_set.n_actions)
         self.optim_action = ""
         self.optim_action_index = 0
         self.current_reward = 0
@@ -102,7 +102,7 @@ class Q_learning_method:
             self.game_set.reset()  # 每次迭代开始前重置游戏状态
             while self.game_set.gameon == 1:
                 self.check_optim_action()
-                self.simu_annealing_search(0.3)
+                self.simu_annealing_search(0.1)
                 self.game_set.take_action(self.optim_action)
                 self.current_reward = self.game_set.get_reward()
 
