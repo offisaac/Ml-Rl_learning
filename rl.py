@@ -47,23 +47,28 @@ class game_set:
         return next_state
     # 定义结束标志
     def check_terminal(self):
-        if (self.state[0] not in range(self.n_rows)) or (self.state[1] not in range(self.n_cols)) or self.maze[
-            self.state[0], self.state[1]] == 2:
+        if self.maze[self.state[0], self.state[1]] == 2:
             self.gameon = 0
             return 1
         else:
             return 0
 
+    def check_border(self):
+        if (self.state[0] not in range(self.n_rows)) or (self.state[1] not in range(self.n_cols)):
+            self.gameon = 0
+            return 1
+        else:
+            return 0
     # """"state->reward层(环境变量获取reward)"""
     # 定义reward
     def get_reward(self):
-        if self.check_terminal():
-            return -2
+        if self.check_border():
+            return -4
         if self.maze[self.state[0], self.state[1]] == 0:
-            return -1
+            return -0.1
         if self.maze[self.state[0], self.state[1]] == 1:
             return -2
-        if self.maze[self.state[0], self.state[1]] == 2:
+        if self.check_terminal():
             return 10
 
 
@@ -84,18 +89,22 @@ class Q_learning_method:
 
     def simu_annealing_search(self, possibility):
         if random.random() < possibility:
-            self.optim_action = self.game_set.actions[random.randint(0, len(self.game_set.actions) - 1)]
-        else:
-            pass
+            self.optim_action_index = random.randint(0, self.game_set.n_actions - 1)
+            self.optim_action = self.game_set.actions[self.optim_action_index]
+        # 否则保持原有的最佳动作，无需额外处理
 
     def get_max_Qprime(self, next_state):
         return max(self.Q_table[next_state[0], next_state[1]])
 
-    def update_Q_table(self):
-        if self.game_set.gameon == 1:
-            self.Q_table[self.game_set.state[0], self.game_set.state[1]] += self.alpha * (
-                    self.current_reward + self.gamma * self.get_max_Qprime(self.game_set.state) - self.Q_table[
-                self.game_set.state[0], self.game_set.state[1]])
+    def update_Q_table(self, prev_state, prev_action_index):
+        next_state = self.game_set.state.copy()
+        if self.game_set.check_border() or self.game_set.check_terminal():
+            max_Q_next = 0
+        else:
+            max_Q_next = self.get_max_Qprime(next_state)
+        self.Q_table[prev_state[0], prev_state[1], prev_action_index] += self.alpha * (
+                self.current_reward + self.gamma * max_Q_next - self.Q_table[
+            prev_state[0], prev_state[1], prev_action_index])
 
     def parameter_update(self, epoch):
         for i in range(epoch):
@@ -103,17 +112,19 @@ class Q_learning_method:
             while self.game_set.gameon == 1:
                 self.check_optim_action()
                 self.simu_annealing_search(0.1)
+                prev_state = self.game_set.state.copy()
+                prev_action_index = self.optim_action_index
                 self.game_set.take_action(self.optim_action)
                 self.current_reward = self.game_set.get_reward()
-
+                self.update_Q_table(prev_state, prev_action_index)
             print(self.game_set.gameon)
             print(self.game_set.state)
-            # print(self.Q_table)
+        print(self.Q_table)
                 # print(self.game_set.state)
 
 Q_learning_method = Q_learning_method()
 
-Q_learning_method.parameter_update(1000)
+Q_learning_method.parameter_update(10000)
 # 1.为什么print(self.game_set.state)不缩进时不打印---因为gameon一直为零 就没有跳出 不应该在reward处reset
 # 2.为什么初始计算的偏好向下---对于argmax对于所有数都相等 默认返回第一个序列
 # 3.为什么同一行的值都相等？？？
