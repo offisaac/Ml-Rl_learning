@@ -118,9 +118,9 @@ class Q_learning_method:
                 self.game_set.take_action(self.optim_action)
                 self.current_reward = self.game_set.get_reward()
                 self.update_Q_table(prev_state, prev_action_index)
-            print(self.game_set.gameon)
-            print(self.game_set.state)
-        print(self.Q_table)
+            # print(self.game_set.gameon)
+            # print(self.game_set.state)
+            # print(self.Q_table)
                 # print(self.game_set.state)
 
     def parameter_save(self, address):
@@ -134,10 +134,24 @@ class Q_learning_method:
         total = 0
         for i in range(epoch):
             self.game_set.reset()
+            while self.game_set.gameon == 1:
+                self.check_optim_action()
+                prev_state = self.game_set.state.copy()
+                prev_action_index = self.optim_action_index
+                self.game_set.take_action(self.optim_action)
+                self.current_reward = self.game_set.get_reward()
+                self.update_Q_table(prev_state, prev_action_index)
+            if not self.game_set.check_border():
+                if self.game_set.check_terminal():
+                    correct += 1
+            total += 1
+        print(f"正确率为{correct / total}")
 
 Q_learning_method = Q_learning_method()
 
-Q_learning_method.parameter_update()
+Q_learning_method.parameter_update(100000)
+
+Q_learning_method.model_test(4000)
 # 1.为什么print(self.game_set.state)不缩进时不打印---因为gameon一直为零 就没有跳出 不应该在reward处reset
 # 2.为什么初始计算的偏好向下---对于argmax对于所有数都相等 默认返回第一个序列
 # 3.为什么同一行的值都相等？？？
