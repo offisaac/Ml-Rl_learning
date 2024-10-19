@@ -77,7 +77,8 @@ class Q_learning_method:
     # 输入state 得到action
     def __init__(self):
         self.game_set = game_set()
-        self.Q_table = np.random.rand(self.game_set.n_rows, self.game_set.n_cols, self.game_set.n_actions)
+        self.Q_table = np.random.rand(self.game_set.n_rows, self.game_set.n_cols,
+                                      self.game_set.n_actions)  # ！！！这里创建的本身就是维度的大小 不用额外减1
         self.optim_action = ""
         self.optim_action_index = 0
         self.current_reward = 0
@@ -122,9 +123,21 @@ class Q_learning_method:
         print(self.Q_table)
                 # print(self.game_set.state)
 
+    def parameter_save(self, address):
+        np.save(address, self.Q_table)
+
+    def parameter_load(self, address):
+        self.Q_table = np.load(address)
+
+    def model_test(self, epoch):
+        correct = 0
+        total = 0
+        for i in range(epoch):
+            self.game_set.reset()
+
 Q_learning_method = Q_learning_method()
 
-Q_learning_method.parameter_update(10000)
+Q_learning_method.parameter_update()
 # 1.为什么print(self.game_set.state)不缩进时不打印---因为gameon一直为零 就没有跳出 不应该在reward处reset
 # 2.为什么初始计算的偏好向下---对于argmax对于所有数都相等 默认返回第一个序列
 # 3.为什么同一行的值都相等？？？
